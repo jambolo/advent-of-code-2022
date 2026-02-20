@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "advent-of-code-2022"
+version = "0.1.0"
+description = "Advent of Code 2022 solutions in Python"
+requires-python = ">=3.12"
+license = "MIT"
+readme = "README.md"
+authors = [
+    { name = "John Bolton", email = "jambolo@users.noreply.github.com" },
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "pytest"]
+
+[tool.setuptools.packages.find]
+include = ["utils*"]
+
+[tool.ruff]
+line-length = 132
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,33 +1,23 @@
 # Advent of Code 2022
 # Day 25
 
-PART_1 = True
-TEST = False
-
-if TEST:
-    FILE_NAME = 'day25-test.txt'
-else:
-    FILE_NAME = 'day25-input.txt'
+from utils import setup, load
 
 
-def readFile(name):
-    file = open(name, mode='r', encoding='utf-8-sig')
-    lines = file.readlines()
-    file.close()
-    return lines
+DAY = 25
 
 
-def to_int(s):
+def to_int(s: str) -> int:
     n = 0
     for c in s:
         n = n * 5 + ("=-012".index(c) - 2)
     return n
 
 
-def to_snafu(n):
-    s = ''
+def to_snafu(n: int) -> str:
+    s = ""
     if n == 0:
-        s = '0'
+        s = "0"
     while n != 0:
         n += 2
         s = "=-012"[n % 5] + s
@@ -35,15 +25,22 @@ def to_snafu(n):
     return s
 
 
-# Read the file.
-lines = []
-lines = readFile(FILE_NAME)
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-numbers = [to_int(line.rstrip()) for line in lines]
+    # Read the file.
+    lines = load.lines(args.input)
 
-sum = 0
-for n in numbers:
-    sum += n
+    numbers = [to_int(line.rstrip()) for line in lines]
 
-print("sum:", sum)
-print("enter: ", to_snafu(sum))
+    total_sum = 0
+    for n in numbers:
+        total_sum += n
+
+    if args.part == 1:
+        print("Result:", to_snafu(total_sum))
+
+
+if __name__ == "__main__":
+    main()

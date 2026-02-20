@@ -1,51 +1,57 @@
 # Advent of Code 2022
 # Day 6
 
-MARKER_SIZE = 14
+from utils import setup, load
 
-def printMarker(buffer, i):
-    s = '|'
+
+DAY = 6
+
+
+def print_marker(buffer: list[str], i: int) -> None:
+    s = "|"
     if i > 0:
-        s += ''.join(buffer[i:])
-        s += ''.join(buffer[:i])
+        s += "".join(buffer[i:])
+        s += "".join(buffer[:i])
     else:
-        s += ''.join(buffer)
-    s += '|'
+        s += "".join(buffer)
+    s += "|"
     print(s)
 
-#test = 'mjqjpqmgbljsphdztnvjfqwrcgsmlb'
 
-file = open('day06-input.txt', 'r')
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-buffer = []
-for i in range(0, MARKER_SIZE):
-    buffer.append(' ')
+    if args.part == 1:
+        marker_size = 4
 
-i = 0
-nUnique = 0
-found = False
-while not found:
-    c = file.read(1)
-#    c = test[i]
-    if not c:
-        break
+    if args.part == 2:
+        marker_size = 14
 
-    buffer[i%MARKER_SIZE] = c
-    nUnique = nUnique + 1
-    printMarker(buffer, (i+1) % MARKER_SIZE)
+    data = load.string(args.input)
 
-    for j in range(1, nUnique):
-        if c == buffer[(i - j + MARKER_SIZE) % MARKER_SIZE]:
-            nUnique = j
+    buffer = []
+    for i in range(marker_size):
+        buffer.append(" ")
+
+    i = 0
+    n_unique = 0
+    for c in data:
+        buffer[i % marker_size] = c
+        n_unique = n_unique + 1
+
+        for j in range(1, n_unique):
+            if c == buffer[(i - j + marker_size) % marker_size]:
+                n_unique = j
+                break
+        if n_unique >= marker_size:
+            i = i + 1
             break
-    if nUnique >= MARKER_SIZE:
-        found = True
-    
-    i = i + 1
 
-file.close()
+        i = i + 1
 
-if found:
-    print('buffer was found at position {i}'.format(i=i))
-else:
-    print('buffer was not found')
+    print(f"Result: {i}")
+
+
+if __name__ == "__main__":
+    main()

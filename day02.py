@@ -1,7 +1,10 @@
 # Advent of Code 2022
 # Day 2
 
-PART = 2
+from utils import setup, load
+
+
+DAY = 2
 
 ROCK = 1
 PAPER = 2
@@ -11,91 +14,87 @@ WIN = 6
 DRAW = 3
 LOSS = 0
 
-abcMap = {
-    "A": ROCK,
-    "B": PAPER,
-    "C": SCISSORS
-}
+abc_map = {"A": ROCK, "B": PAPER, "C": SCISSORS}
 
-xyzMap1 = {
-    "X": ROCK,
-    "Y": PAPER,
-    "Z": SCISSORS
-}
+xyz_map_1 = {"X": ROCK, "Y": PAPER, "Z": SCISSORS}
 
-xyzMap2 = {
-    "X": LOSS,
-    "Y": DRAW,
-    "Z": WIN
-}
+xyz_map_2 = {"X": LOSS, "Y": DRAW, "Z": WIN}
 
 outcomes = [
-    { "me": ROCK, "them": ROCK, "outcome": DRAW },
-    { "me": ROCK, "them": PAPER, "outcome": LOSS },
-    { "me": ROCK, "them": SCISSORS, "outcome": WIN },
-    { "me": PAPER, "them": ROCK, "outcome": WIN },
-    { "me": PAPER, "them": PAPER, "outcome": DRAW },
-    { "me": PAPER, "them": SCISSORS, "outcome": LOSS },
-    { "me": SCISSORS, "them": ROCK, "outcome": LOSS },
-    { "me": SCISSORS, "them": PAPER, "outcome": WIN },
-    { "me": SCISSORS, "them": SCISSORS, "outcome": DRAW }
+    {"me": ROCK, "them": ROCK, "outcome": DRAW},
+    {"me": ROCK, "them": PAPER, "outcome": LOSS},
+    {"me": ROCK, "them": SCISSORS, "outcome": WIN},
+    {"me": PAPER, "them": ROCK, "outcome": WIN},
+    {"me": PAPER, "them": PAPER, "outcome": DRAW},
+    {"me": PAPER, "them": SCISSORS, "outcome": LOSS},
+    {"me": SCISSORS, "them": ROCK, "outcome": LOSS},
+    {"me": SCISSORS, "them": PAPER, "outcome": WIN},
+    {"me": SCISSORS, "them": SCISSORS, "outcome": DRAW},
 ]
 
-def parseLine1(line):
+
+def parse_line_1(line: str) -> list[int]:
     line = line.strip()
     moves = line.split()
-    theirs = abcMap[moves[0]]
-    mine = xyzMap1[moves[1]]
+    theirs = abc_map[moves[0]]
+    mine = xyz_map_1[moves[1]]
     return [theirs, mine]
 
-def parseLine2(line):
+
+def parse_line_2(line: str) -> list[int]:
     line = line.strip()
     moves = line.split()
-    theirs = abcMap[moves[0]]
-    outcome = xyzMap2[moves[1]]
+    theirs = abc_map[moves[0]]
+    outcome = xyz_map_2[moves[1]]
     return [theirs, outcome]
 
-def outcome(me, them):
+
+def outcome(me: int, them: int) -> int:
     for o in outcomes:
         if me == o["me"] and them == o["them"]:
             return o["outcome"]
     raise Exception("outcome: invalid parameters.")
 
-def chooseMyMove(them, outcome):
+
+def choose_my_move(them: int, outcome: int) -> int:
     for o in outcomes:
         if them == o["them"] and outcome == o["outcome"]:
             return o["me"]
-    raise Exception("chooseMyMove: invalid parameters.")
+    raise Exception("choose_my_move: invalid parameters.")
 
-# Read the file
 
-file = open('day02-input.txt', mode = 'r', encoding = 'utf-8-sig')
-lines = file.readlines()
-file.close()
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-myFinal = 0
-theirFinal = 0
-for line in lines:
-    if PART == 1:
-        [theirMove, myMove] = parseLine1(line)
-        myOutcome = outcome(myMove, theirMove)
-        theirOutcome = outcome(theirMove, myMove)
-    elif PART == 2:
-        [theirMove, myOutcome] = parseLine2(line)
-        myMove = chooseMyMove(theirMove, myOutcome)
-        theirOutcome = outcome(theirMove, myMove)
-    else:
-        raise Exception('Invalid PART value')
-        
-    round = {
-        "mine": myMove,
-        "theirs": theirMove,
-        "myScore": myMove + myOutcome,
-        "theirScore": theirMove + theirOutcome
-    }
-    myFinal += round["myScore"]
-    theirFinal += round["theirScore"]
+    # Read the file
+    lines = load.lines(args.input)
 
-    print('{line}: {round}, myFinal={myFinal}, theirFinal = {theirFinal}'.format(line=line.strip(), round=round, myFinal=myFinal, theirFinal=theirFinal))
+    my_final = 0
+    their_final = 0
+    for line in lines:
+        if args.part == 1:
+            [theirMove, myMove] = parse_line_1(line)
+            myOutcome = outcome(myMove, theirMove)
+            theirOutcome = outcome(theirMove, myMove)
+        elif args.part == 2:
+            [theirMove, myOutcome] = parse_line_2(line)
+            myMove = choose_my_move(theirMove, myOutcome)
+            theirOutcome = outcome(theirMove, myMove)
+        else:
+            raise Exception("Invalid args.part value")
 
-print('Final Score: me - {myFinal}, them - {theirFinal}'.format(myFinal=myFinal, theirFinal=theirFinal))
+        round_dict = {
+            "mine": myMove,
+            "theirs": theirMove,
+            "myScore": myMove + myOutcome,
+            "theirScore": theirMove + theirOutcome,
+        }
+        my_final += round_dict["myScore"]
+        their_final += round_dict["theirScore"]
+
+    print(f"Result: {my_final}")
+
+
+if __name__ == "__main__":
+    main()

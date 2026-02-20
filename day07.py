@@ -1,26 +1,34 @@
 # Advent of Code 2022
 # Day 7
 
+from __future__ import annotations
+
+from utils import setup, load
 import re
 
-THRESHOLD      = 100000
-TOTAL_SPACE    = 70000000
+
+DAY = 7
+
+THRESHOLD = 100000
+TOTAL_SPACE = 70000000
 MINIMUM_UNUSED = 30000000
 
-class Node:
-    def __init__(self, name, size, parent=None):
-        self.parent = parent
-        self.name = name
-        self.size = size
-        self.nodes = []
-        self.files = []
 
-def cd(where, node):
-    if where == '/':
+class Node:
+    def __init__(self, name: str, size: int, parent: Node | None = None) -> None:
+        self.parent: Node | None = parent
+        self.name: str = name
+        self.size: int = size
+        self.nodes: list[Node] = []
+        self.files: list[Node] = []
+
+
+def cd(where: str, node: Node, root: Node) -> Node | None:
+    if where == "/":
         cwd = None
-    elif where == '..':
+    elif where == "..":
         if node == root:
-            raise Exception('cd .. at root')
+            raise Exception("cd .. at root")
         cwd = node.parent
     else:
         for n in node.nodes:
@@ -29,7 +37,8 @@ def cd(where, node):
                 break
     return cwd
 
-def addNode(name, node):
+
+def add_node(name: str, node: Node, cwd: Node) -> None:
     found = False
     for n in node.nodes:
         if n.name == name:
@@ -38,7 +47,8 @@ def addNode(name, node):
     if not found:
         node.nodes.append(Node(name, 0, cwd))
 
-def addFile(name, size, node):
+
+def add_file(name: str, size: int, node: Node) -> None:
     found = False
     for n in node.files:
         if n.name == name:
@@ -51,88 +61,85 @@ def addFile(name, size, node):
             n.size += size
             n = n.parent
 
-def findNodesUnderThreshold(node, result):
+
+def find_nodes_under_threshold(node: Node, result: list[Node]) -> None:
     if node.size <= THRESHOLD:
         result.append(node)
     for n in node.nodes:
-        findNodesUnderThreshold(n, result)
-    
-def findSmallestNode(node, minimum):
+        find_nodes_under_threshold(n, result)
+
+
+def find_smallest_node(node: Node, minimum: int) -> int:
     best = 0
     for n in node.nodes:
-        size = findSmallestNode(n, minimum)
+        size = find_smallest_node(n, minimum)
         if size >= minimum and (not best or size < best):
             best = size
     if node.size >= minimum and (not best or node.size < best):
         best = node.size
     return best
- 
-def drawFileSystem(node, spaces):
-    print('{s}{name}: {size}'.format(s=spaces, name=node.name, size=node.size))
-    for n in node.nodes:
-        drawFileSystem(n, spaces + '  ')
-    for f in node.files:
-        print('{s}  {name}: {size}'.format(s=spaces, name=f.name, size=f.size))
-
-# Read the file
-
-file = open('day07-input.txt', mode = 'r', encoding = 'utf-8-sig')
-lines = file.readlines()
-file.close()
-
-root = Node('/', 0)
-cwd = root
-
-i = 0
-while i < len(lines):
-    line = lines[i].strip()
-    i = i + 1
-
-    # Determine what the command is
-    if line[0] != '$':
-        raise Exception('Command expected at line {i}. Found this: {c}'.format(i=i, c=line))
-
-    command = line[2:]
-    if command[:2] == 'cd':
-        where = command[3:]
-        cwd = cd(where, cwd)
-        if not cwd:
-            cwd = root
-    elif command == 'ls':
-        while i < len(lines) and lines[i][0] != '$':
-            line = lines[i].strip()
-            i = i + 1
-            if line[:3] == 'dir':
-                addNode(line[4:], cwd)
-            else:
-                match = re.search('(\d+)\s+(.+)', line)
-                size = int(match.group(1))
-                name = match.group(2)
-                addFile(name, size, cwd)
-    else:
-        raise Exception('Unknown command at line {i}. Found this: {c}'.format(i=i+1, c=command))
 
 
-drawFileSystem(root, '')
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-# Part 1 solution
+    # Read the file
+    lines = load.lines(args.input)
 
-result = []
-findNodesUnderThreshold(root, result)
+    root = Node("/", 0)
+    cwd = root
 
-total = 0
-for r in result:
-    total += r.size
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        i = i + 1
 
-print('Total of nodes: {total}'.format(total=total))
+        # Determine what the command is
+        if line[0] != "$":
+            raise Exception(f"Command expected at line {i}. Found this: {line}")
 
-# Part 2 solution
+        command = line[2:]
+        if command[:2] == "cd":
+            where = command[3:]
+            cwd = cd(where, cwd, root)
+            if not cwd:
+                cwd = root
+        elif command == "ls":
+            while i < len(lines) and lines[i][0] != "$":
+                line = lines[i].strip()
+                i = i + 1
+                if line[:3] == "dir":
+                    add_node(line[4:], cwd, cwd)
+                else:
+                    match = re.search(r"(\d+)\s+(.+)", line)
+                    size = int(match.group(1))
+                    name = match.group(2)
+                    add_file(name, size, cwd)
+        else:
+            raise Exception(f"Unknown command at line {i + 1}. Found this: {command}")
 
-used = root.size
-unused = TOTAL_SPACE - used
-needed = MINIMUM_UNUSED - unused
+    #    draw_file_system(root, '')
 
-print('used={used}, unused={unused}, needed={needed}'.format(used=used, unused=unused, needed=needed))
+    # Part 1 solution
+    if args.part == 1:
+        result = []
+        find_nodes_under_threshold(root, result)
 
-best = findSmallestNode(root, needed)
-print('Best node to delete has size of {best}'.format(best=best))
+        total = 0
+        for r in result:
+            total += r.size
+
+        print(f"Result: {total}")
+
+    # Part 2 solution
+    if args.part == 2:
+        used = root.size
+        unused = TOTAL_SPACE - used
+        needed = MINIMUM_UNUSED - unused
+        best = find_smallest_node(root, needed)
+        print(f"Result: {best}")
+
+
+if __name__ == "__main__":
+    main()

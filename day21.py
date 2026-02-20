@@ -1,127 +1,139 @@
 # Advent of Code 2022
 # Day 21
 
+from utils import setup, load
 import re
 
-PART_1 = False
-TEST = False
-if TEST:
-    FILE_NAME = 'day21-test.txt'
-else:
-    FILE_NAME = 'day21-input.txt'
 
-def readFile(name):
-    file = open(name, mode = 'r', encoding = 'utf-8-sig')
-    lines = file.readlines()
-    file.close()
-    return lines
+DAY = 21
+
 
 def evaluate(monkeys, name):
     m = monkeys[name]
     if "value" in m:
         return m["value"]
     else:
-        op = m["op"]
         operand0 = m["operands"][0]
         operand1 = m["operands"][1]
-        if m["op"] == '+':
+        if m["op"] == "+":
             return evaluate(monkeys, operand0) + evaluate(monkeys, operand1)
-        elif m["op"] == '-':
+        elif m["op"] == "-":
             return evaluate(monkeys, operand0) - evaluate(monkeys, operand1)
-        elif m["op"] == '*':
+        elif m["op"] == "*":
             return evaluate(monkeys, operand0) * evaluate(monkeys, operand1)
-        elif m["op"] == '/':
+        elif m["op"] == "/":
             return evaluate(monkeys, operand0) / evaluate(monkeys, operand1)
-        elif m["op"] == '=':
+        elif m["op"] == "=":
             return evaluate(monkeys, operand0) == evaluate(monkeys, operand1)
         else:
             raise Exception("invalid operator")
 
-def findPath(monkeys, node, name):
+
+def find_path(monkeys, node, name):
     m = monkeys[node]
     if node == name:
         return [name]
     if "value" in m:
         return None
-    path = findPath(monkeys, m["operands"][0], name)
+    path = find_path(monkeys, m["operands"][0], name)
     if not path:
-        path = findPath(monkeys, m["operands"][1], name)
+        path = find_path(monkeys, m["operands"][1], name)
     if not path:
         return None
-    newPath = path.copy()
-    newPath.insert(0, node)
-    return newPath
+    new_path = path.copy()
+    new_path.insert(0, node)
+    return new_path
+
 
 def invert(monkeys, name, path, goal):
     if name == "humn":
         return goal
     m = monkeys[name]
-    if m["operands"][0] not in pathToHumn:
+    if m["operands"][0] not in path:
         operand0 = evaluate(monkeys, m["operands"][0])
-        if m["op"] == '+':
-            humn = invert(monkeys, m["operands"][1], pathToHumn, goal - operand0)
-        elif m["op"] == '-':
-            humn = invert(monkeys, m["operands"][1], pathToHumn, operand0 - goal)
-        elif m["op"] == '*':
-            humn = invert(monkeys, m["operands"][1], pathToHumn, goal / operand0)
-        elif m["op"] == '/':
-            humn = invert(monkeys, m["operands"][1], pathToHumn, operand0 / goal)
-        elif m["op"] == '=':
-            humn = invert(monkeys, m["operands"][1], pathToHumn, operand0 if goal else -operand0)
+        if m["op"] == "+":
+            humn = invert(monkeys, m["operands"][1], path, goal - operand0)
+        elif m["op"] == "-":
+            humn = invert(monkeys, m["operands"][1], path, operand0 - goal)
+        elif m["op"] == "*":
+            humn = invert(monkeys, m["operands"][1], path, goal / operand0)
+        elif m["op"] == "/":
+            humn = invert(monkeys, m["operands"][1], path, operand0 / goal)
+        elif m["op"] == "=":
+            humn = invert(
+                monkeys,
+                m["operands"][1],
+                path,
+                operand0 if goal else -operand0,
+            )
     else:
         operand1 = evaluate(monkeys, m["operands"][1])
-        if m["op"] == '+':
-            humn = invert(monkeys, m["operands"][0], pathToHumn, goal - operand1)
-        elif m["op"] == '-':
-            humn = invert(monkeys, m["operands"][0], pathToHumn, goal + operand1)
-        elif m["op"] == '*':
-            humn = invert(monkeys, m["operands"][0], pathToHumn, goal / operand1)
-        elif m["op"] == '/':
-            humn = invert(monkeys, m["operands"][0], pathToHumn, goal * operand1)
-        elif m["op"] == '=':
-            humn = invert(monkeys, m["operands"][0], pathToHumn, operand1 if goal else -operand1)
+        if m["op"] == "+":
+            humn = invert(monkeys, m["operands"][0], path, goal - operand1)
+        elif m["op"] == "-":
+            humn = invert(monkeys, m["operands"][0], path, goal + operand1)
+        elif m["op"] == "*":
+            humn = invert(monkeys, m["operands"][0], path, goal / operand1)
+        elif m["op"] == "/":
+            humn = invert(monkeys, m["operands"][0], path, goal * operand1)
+        elif m["op"] == "=":
+            humn = invert(
+                monkeys,
+                m["operands"][0],
+                path,
+                operand1 if goal else -operand1,
+            )
     return humn
 
-# Read the file.
-lines = readFile(FILE_NAME)
 
-monkeys = {}
-for line in lines:
-    match = re.search('([a-z]{4})\: (\d+|([a-z]{4}) ([\+\-\*\/]) ([a-z]{4}))', line)
-    if match.group(3):
-        monkey = { "op" : match.group(4), "operands" : [match.group(3), match.group(5)] }
-    else:
-        monkey = { "value" : int(match.group(2)) }
-    monkeys[match.group(1)] = monkey
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-root = monkeys["root"]
+    # Read the file.
+    lines = load.lines(args.input)
 
-if PART_1:
-    value = evaluate(monkeys, "root")
-    print("Root yells: ", value)
-else:
-    root["op"] = '='
+    monkeys = {}
+    for line in lines:
+        match = re.search(r"([a-z]{4})\: (\d+|([a-z]{4}) ([\+\-\*\/]) ([a-z]{4}))", line)
+        if match.group(3):
+            monkey = {
+                "op": match.group(4),
+                "operands": [match.group(3), match.group(5)],
+            }
+        else:
+            monkey = {"value": int(match.group(2))}
+        monkeys[match.group(1)] = monkey
+
+    root = monkeys["root"]
+
+    if args.part == 1:
+        value = evaluate(monkeys, "root")
+        print("Result: ", int(value))
+
+    if args.part == 2:
+        root["op"] = "="
+
+        n = "humn"
+        test_path = ["humn"]
+        while n != "root":
+            for m in monkeys:
+                if "value" not in monkeys[m]:
+                    if n in monkeys[m]["operands"]:
+                        n = m
+                        test_path.append(m)
+                        break
+
+        path_to_humn = find_path(monkeys, "root", "humn")
+
+        if root["operands"][0] not in path_to_humn:
+            goal = evaluate(monkeys, root["operands"][0])
+            humn = invert(monkeys, root["operands"][1], path_to_humn, goal)
+        else:
+            goal = evaluate(monkeys, root["operands"][1])
+            humn = invert(monkeys, root["operands"][0], path_to_humn, goal)
+        print("Result:", int(humn))
 
 
-    n = "humn"
-    testPath = ["humn"]
-    while n != "root":
-        for m in monkeys:
-            if "value" not in monkeys[m]:
-                if n in monkeys[m]["operands"]:
-                    n = m
-                    testPath.append(m)
-                    break
-
-    pathToHumn = findPath(monkeys, "root", "humn")
-
-    if root["operands"][0] not in pathToHumn:
-        goal = evaluate(monkeys, root["operands"][0])
-        humn = invert(monkeys, root["operands"][1], pathToHumn, goal)
-    else:
-        goal = evaluate(monkeys, root["operands"][1])
-        humn = invert(monkeys, root["operands"][0], pathToHumn, goal)
-    print("humn =", humn)
-    monkeys["humn"]["value"] = humn
-    print("success =", evaluate(monkeys, "root"))
-
+if __name__ == "__main__":
+    main()

@@ -1,35 +1,46 @@
 # Advent of Code 2022
 # Day 4
 
+from utils import setup, load
 import re
 
-# regex for parsing lines
-regex = '(\d+)-(\d+),(\d+)-(\d+)'
 
-# Read the file
+DAY = 4
 
-file = open('day04-input.txt', mode = 'r', encoding = 'utf-8-sig')
-lines = file.readlines()
-file.close()
 
-containCount = 0
-intersectCount = 0
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-for line in lines:
-    line = line.strip()
+    # regex for parsing lines
+    regex = r"(\d+)-(\d+),(\d+)-(\d+)"
 
-    match = re.search(regex, line)
-    low1 = int(match.group(1))
-    high1 = int(match.group(2))
-    low2 = int(match.group(3))
-    high2 = int(match.group(4))
-#    print('{low1}-{high1},{low2}-{high2}'.format(low1=low1, high1=high1, low2=low2, high2=high2))
+    # Read the file
+    lines = load.lines(args.input)
 
-    if low1 <= high2 and low2 <= high1:
-        intersectCount = intersectCount + 1
+    contain_count = 0
+    intersect_count = 0
 
-    if (low1 <= low2 and high1 >= high2) or (low2 <= low1 and high2 >= high1):
-        containCount += 1
+    for line in lines:
+        line = line.strip()
 
-print('Number of contained ranges is {count}'.format(count=containCount))
-print('Number of intersecting ranges is {count}'.format(count=intersectCount))
+        match = re.search(regex, line)
+        low1 = int(match.group(1))
+        high1 = int(match.group(2))
+        low2 = int(match.group(3))
+        high2 = int(match.group(4))
+
+        if low1 <= high2 and low2 <= high1:
+            intersect_count = intersect_count + 1
+
+        if (low1 <= low2 and high1 >= high2) or (low2 <= low1 and high2 >= high1):
+            contain_count += 1
+
+    if args.part == 1:
+        print(f"Result: {contain_count}")
+    if args.part == 2:
+        print(f"Result: {intersect_count}")
+
+
+if __name__ == "__main__":
+    main()

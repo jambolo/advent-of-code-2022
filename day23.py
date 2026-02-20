@@ -1,146 +1,142 @@
 # Advent of Code 2022
 # Day 23
 
-import copy
-import re
-
-PART_2 = True
-TEST = False
-
-if PART_2:
-    NUMBER_OF_ROUNDS = 2000000000
-else:
-    NUMBER_OF_ROUNDS = 10
-
-if TEST:
-    FILE_NAME = 'day23-test.txt'
-else:
-    FILE_NAME = 'day23-input.txt'
-
-def readFile(name):
-    file = open(name, mode = 'r', encoding = 'utf-8-sig')
-    lines = file.readlines()
-    file.close()
-    return lines
-
-def replaceAtIndex(s, i, c):
-    return s[:i] + c + s[i+len(c):]
-
-def computeExtents(elves):
-    minX = elves[0][0]
-    maxX = elves[0][0]
-    minY = elves[0][1]
-    maxY = elves[0][1]
-    for e in elves:
-        if e[0] < minX:
-            minX = e[0]
-        if e[0] > maxX:
-            maxX = e[0]
-        if e[1] < minY:
-            minY = e[1]
-        if e[1] > maxY:
-            maxY = e[1]
-    return (minX, maxX, minY, maxY)
-
-def printMap(elves):
-    (minX, maxX, minY, maxY) = computeExtents(elves)
-    width = maxX - minX + 1
-    height = maxY - minY + 1
-    map = []
-    for y in range(0, height):
-        map.append('.'*width)
-    for e in elves:
-        map[e[1]-minY] = replaceAtIndex(map[e[1]-minY], e[0]-minX, '#')
-    for row in map:
-        print(row)
-
-def alone(e, elves):
-    return (
-            [e[0]-1, e[1]-1] not in elves and [e[0], e[1]-1] not in elves and [e[0]+1, e[1]-1] not in elves
-        and [e[0]-1, e[1]  ] not in elves                                 and [e[0]+1, e[1]  ] not in elves
-        and [e[0]-1, e[1]+1] not in elves and [e[0], e[1]+1] not in elves and [e[0]+1, e[1]+1] not in elves
-    )
-
-def canMove(e, elves, template, i):
-    t = template[i]
-    return (
-            [e[0]+t[0][0], e[1]+t[0][1]] not in elves
-        and [e[0]+t[1][0], e[1]+t[1][1]] not in elves
-        and [e[0]+t[2][0], e[1]+t[2][1]] not in elves
-    )
-
-def proposedMovement(e, template, i):
-    t = template[i]
-    return [e[0]+t[3][0], e[1]+t[3][1]]
+from utils import setup, load
 
 
-# Read the file.
-lines = readFile(FILE_NAME)
+DAY = 23
 
-elves = []
-for y in range(0, len(lines)):
-    for x in range(0, len(lines[y])):
-        if lines[y][x] == '#':
-            elves.append([x, y])
-if TEST:
-    print("elves=", elves)
-    print('Starting positions:')
-    printMap(elves)
+# Direction constants (8 directions, counter-clockwise starting from E)
+E = 0
+NE = 1
+N = 2
+NW = 3
+W = 4
+SW = 5
+S = 6
+SE = 7
 
-proposalTemplate = [
-    [[-1, -1], [ 0, -1], [+1, -1], [ 0, -1]],
-    [[-1, +1], [ 0, +1], [+1, +1], [ 0, +1]],
-    [[-1, -1], [-1,  0], [-1, +1], [-1,  0]],
-    [[+1, -1], [+1,  0], [+1, +1], [+1,  0]]
+type Vec2 = tuple[int, int]  # [x, y]
+type ElfList = set[Vec2]
+type ProposalCheck = tuple[int, int, int]  # 3 offsets to check. The proposed movement is the 2nd offset.
+
+
+DIRECTION_OFFSETS: list[Vec2] = [
+    (+1, 0),  # E
+    (+1, -1),  # NE
+    (0, -1),  # N
+    (-1, -1),  # NW
+    (-1, 0),  # W
+    (-1, +1),  # SW
+    (0, +1),  # S
+    (+1, +1),  # SE
 ]
 
-first = 0
+# List of proposal checks in the initial order (N< S< W< E).
+INITIAL_PROPOSAL_CHECKS: list[ProposalCheck] = [(NW, N, NE), (SW, S, SE), (NW, W, SW), (NE, E, SE)]
 
-for round in range(0, NUMBER_OF_ROUNDS):
-    proposed = []
-    # Propose movement
-    for e in elves:
-        if alone(e, elves):
-            proposed.append([])
-        elif canMove(e, elves, proposalTemplate, (first + 0) % 4):
-            proposed.append(proposedMovement(e, proposalTemplate, (first + 0) % 4))
-        elif canMove(e, elves, proposalTemplate, (first + 1) % 4):
-            proposed.append(proposedMovement(e, proposalTemplate, (first + 1) % 4))
-        elif canMove(e, elves, proposalTemplate, (first + 2) % 4):
-            proposed.append(proposedMovement(e, proposalTemplate, (first + 2) % 4))
-        elif canMove(e, elves, proposalTemplate, (first + 3) % 4):
-            proposed.append(proposedMovement(e, proposalTemplate, (first + 3) % 4))
-        else:
-            proposed.append([])
 
-    # Resolve
-    stationaryCount = 0
-    for i in range(0, len(elves)):
-        p = proposed[i]
-        if p:
-            count = 0
-            for j in range(0, len(elves)):
-                if j != i and proposed[j] == p:
-                    count += 1
-            if count == 0:
-                elves[i] = p
-        else:
-            stationaryCount += 1
-    if PART_2:
-        if stationaryCount == len(elves):
-            print("Nobody moved in round", round+1)
-            break
+def replace_at_index(s: str, i: int, c: str) -> str:
+    """Returns a copy of s with the string starting at index i replaced by c."""
+    return s[:i] + c + s[i + len(c) :]
 
-    if TEST:
-        print("Round", round + 1)
-        printMap(elves)
-    elif PART_2 and round % 10 == 9:
-        print("Round:", round + 1, ", Stationary count:", stationaryCount)
 
-    first += 1
+def compute_extents(elves: ElfList) -> tuple[int, int, int, int]:
+    """Computes the extents of the elves' positions. Returns (min_x, max_x, min_y, max_y)"""
+    xs, ys = zip(*elves)
+    return (min(xs), max(xs), min(ys), max(ys))
 
-if not PART_2:
-    (minX, maxX, minY, maxY) = computeExtents(elves)
 
-    emptySpaces = (maxX - minX + 1) * (maxY - minY + 1) - len(elves)
-    print("empty spaces =", emptySpaces)
+def alone(e: Vec2, elves: ElfList) -> bool:
+    for offset in DIRECTION_OFFSETS:
+        if (e[0] + offset[0], e[1] + offset[1]) in elves:
+            return False
+    return True
+
+
+def can_move(e: Vec2, elves: ElfList, check: ProposalCheck) -> bool:
+    for c in check:
+        offset = DIRECTION_OFFSETS[c]
+        if (e[0] + offset[0], e[1] + offset[1]) in elves:
+            return False
+    return True
+
+
+def proposed_movement(e: Vec2, check: ProposalCheck) -> Vec2:
+    offset = DIRECTION_OFFSETS[check[1]]
+    return (e[0] + offset[0], e[1] + offset[1])
+
+
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
+
+    # Read the file.
+    lines: list[str] = load.lines(args.input)
+
+    elves: ElfList = set()
+    for y in range(len(lines)):
+        for x in range(len(lines[y])):
+            if lines[y][x] == "#":
+                elves.add((x, y))
+
+    proposal_checks = INITIAL_PROPOSAL_CHECKS.copy()
+
+    if args.part == 1:
+        number_of_rounds = 10
+    if args.part == 2:
+        number_of_rounds = 2000000000  # arbitrary large number
+
+    for round in range(number_of_rounds):
+        proposed: dict[Vec2, list[Vec2]] = {}
+        stationary_count: int = 0
+
+        # Propose movement
+        for e in elves:
+            proposal: Vec2 | None
+            if alone(e, elves):
+                proposal = None
+                stationary_count += 1
+            elif can_move(e, elves, proposal_checks[(round + 0) % 4]):
+                proposal = proposed_movement(e, proposal_checks[(round + 0) % 4])
+            elif can_move(e, elves, proposal_checks[(round + 1) % 4]):
+                proposal = proposed_movement(e, proposal_checks[(round + 1) % 4])
+            elif can_move(e, elves, proposal_checks[(round + 2) % 4]):
+                proposal = proposed_movement(e, proposal_checks[(round + 2) % 4])
+            elif can_move(e, elves, proposal_checks[(round + 3) % 4]):
+                proposal = proposed_movement(e, proposal_checks[(round + 3) % 4])
+            else:
+                proposal = None
+                stationary_count += 1
+
+            if proposal is not None:
+                if proposal not in proposed:
+                    proposed[proposal] = []
+                proposed[proposal].append(e)
+            else:
+                if e not in proposed:
+                    proposed[e] = []
+                proposed[e].append(e)
+
+        if args.part == 2 and stationary_count == len(elves):
+            print("Result:", round + 1)
+            return
+
+        # Resolve
+        for p, elves_list in proposed.items():
+            if len(elves_list) == 1:
+                e = elves_list[0]
+                elves.remove(e)
+                elves.add(p)
+
+        round += 1
+
+    if args.part == 1:
+        (min_x, max_x, min_y, max_y) = compute_extents(elves)
+
+        empty_spaces = (max_x - min_x + 1) * (max_y - min_y + 1) - len(elves)
+        print("Result:", empty_spaces)
+
+
+if __name__ == "__main__":
+    main()

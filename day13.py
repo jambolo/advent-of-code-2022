@@ -1,18 +1,15 @@
 # Advent of Code 2022
 # Day 13
 
+from utils import setup, load
 import json
 import functools
 
-FILE_NAME = 'day13-input.txt'
 
-def readFile(name):
-    file = open(name, mode = 'r', encoding = 'utf-8-sig')
-    lines = file.readlines()
-    file.close()
-    return lines
+DAY = 13
 
-def determineOrder(left, right):
+
+def determine_order(left: list, right: list) -> int:
     i = 0
     while i < len(left) and i < len(right):
         if type(left[i]) is int and type(right[i]) is int:
@@ -21,16 +18,16 @@ def determineOrder(left, right):
                 return order
         elif type(left[i]) is int and type(right[i]) is list:
             listified = [left[i]]
-            order = determineOrder(listified, right[i])
+            order = determine_order(listified, right[i])
             if order != 0:
                 return order
         elif type(left[i]) is list and type(right[i]) is int:
             listified = [right[i]]
-            order = determineOrder(left[i], listified)
+            order = determine_order(left[i], listified)
             if order != 0:
                 return order
         elif type(left[i]) is list and type(right[i]) is list:
-            order = determineOrder(left[i], right[i])
+            order = determine_order(left[i], right[i])
             if order != 0:
                 return order
         else:
@@ -39,51 +36,54 @@ def determineOrder(left, right):
 
     return len(left) - len(right)
 
-# Read the file
-lines = readFile(FILE_NAME)
 
-iLine = 0
-iPair = 1
-correctPairs = []
+def main() -> None:
+    args = setup.parse_command_line(DAY)
+    setup.print_banner(DAY, args.part)
 
-while iLine < len(lines):
+    # Read the file
+    lines = load.lines(args.input)
 
-    # Load a pair
-    left = json.loads(lines[iLine])
-    iLine += 1
-    if iLine >= len(lines):
-        break;
+    iLine = 0
+    iPair = 1
+    correctPairs = []
 
-    right = json.loads(lines[iLine])
-    iLine += 1
-    iLine += 1 # skip blank line
+    while iLine < len(lines):
+        # Load a pair
+        left = json.loads(lines[iLine])
+        iLine += 1
+        if iLine >= len(lines):
+            break
 
-#    print(left, "vs", right)
+        right = json.loads(lines[iLine])
+        iLine += 1
+        iLine += 1  # skip blank line
 
-    # If it is in the correct order, save the index
-    order = determineOrder(left, right)
-    if order < 0:
-        correctPairs.append(iPair)
-#        print('Pair {i}: in order'.format(i=iPair))
-#    elif order > 0:
-#        print('Pair {i}: out of order'.format(i=iPair))
-#    else:
-#        print('Pair {i}: same'.format(i=iPair))
-        
-    iPair += 1
+        # If it is in the correct order, save the index
+        order = determine_order(left, right)
+        if order < 0:
+            correctPairs.append(iPair)
 
-sum = 0
-for p in correctPairs:
-    sum += p
+        iPair += 1
 
-print('Sum of correct indexes =', sum)
+    if args.part == 1:
+        pair_sum = 0
+        for p in correctPairs:
+            pair_sum += p
 
-all = [json.loads(line) for line in lines if len(line.strip()) > 0]
-all.append([[2]])
-all.append([[6]])
-s = sorted(all, key=functools.cmp_to_key(determineOrder))
+        print("Result:", pair_sum)
 
-first = s.index([[2]]) + 1
-last = s.index([[6]]) + 1
+    if args.part == 2:
+        all_packets = [json.loads(line) for line in lines if len(line.strip()) > 0]
+        all_packets.append([[2]])
+        all_packets.append([[6]])
+        s = sorted(all_packets, key=functools.cmp_to_key(determine_order))
 
-print('part 2 result is ', first * last)
+        first = s.index([[2]]) + 1
+        last = s.index([[6]]) + 1
+
+        print("Result:", first * last)
+
+
+if __name__ == "__main__":
+    main()
