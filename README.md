@@ -1,6 +1,6 @@
 # Advent of Code 2022
 
-![CI Status](https://github.com/jambolo/advent-of-code-2022/actions/workflows/ci.yml/badge.svg)
+[![CI Status](https://github.com/jambolo/advent-of-code-2022/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jambolo/advent-of-code-2022/actions/workflows/ci.yml)
 
 Advent of Code solutions for 2022 in Python. The development environment is VS Code and WSL Ubuntu.
 
